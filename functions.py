@@ -36,11 +36,14 @@ def Smoothingfilters(value,img):
 
 '''Função responsável por determinar a forma geométrica com base no contorno já encontrado.'''
 
-def findShapes(contours, img, sl7, sl8, sl9):
-
-    for contour in contours:
+def findShapes(contours, img, hierarquia, sl7, sl8, sl9):
+    
+    for i, contour in enumerate(contours):
         approx = cv2.approxPolyDP(contour, 0.01*cv2.arcLength(contour, True), True) #estava 0.01
         #cv2.drawContours(img, [approx], -1, (0, 255, 0), 2)
+
+        parent = hierarquia[0][i][3]
+        child = hierarquia[0][i][2]
 
         x, y, w, h = cv2.boundingRect(approx)
         pi = 3.14
@@ -57,10 +60,16 @@ def findShapes(contours, img, sl7, sl8, sl9):
         
 
         if (len(approx) == 4 and (w*h >= sl8)):
-            cv2.drawContours(img, [approx], -1, (0, 127, 255), 2)
-            cv2.putText(img, "Square", (x,y), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 127, 255))
-            if (centro_x != None) and (centro_y != None):
-                cv2.circle(img,(centro_x, centro_y), 5,(0, 127, 255),-1)
+
+            if child == -1:
+                cv2.drawContours(img, [approx], -1, (0, 0, 255), 2)
+                print("entrei")
+            
+            else:
+                cv2.drawContours(img, [approx], -1, (0, 127, 255), 2)
+                cv2.putText(img, "Square", (x,y), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 127, 255))
+                if (centro_x != None) and (centro_y != None):
+                    cv2.circle(img,(centro_x, centro_y), 5,(0, 127, 255),-1)
 
             
         elif (len(approx) == 12 and (((2*w*h) - w**2) >= sl7)):
@@ -83,6 +92,63 @@ def findShapes(contours, img, sl7, sl8, sl9):
                 cv2.putText(img, "Circle", (x,y), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 255))
                 if (centro_x != None) and (centro_y != None):
                     cv2.circle(img,(centro_x, centro_y), 5,(255, 0, 255),-1)
+
+
+
+        #     '''responsável por encontrar a forma quadricular'''
+        # if ((len(approx) == 4) and (w*h >= sl8)):
+                
+        #     if (central_point_circle is not None) and (central_point_cross is not None):
+        #         pointIsInsideSquare1 = cv2.pointPolygonTest(approx,central_point_circle, False)
+        #         pointIsInsideSquare2 = cv2.pointPolygonTest(approx,central_point_cross, False)
+        
+        #         if ((pointIsInsideSquare1 == -1) and (pointIsInsideSquare2 == -1)): #os pontos centrais do circulo e da cruz estão fora
+        #             cv2.drawContours(img, [approx], -1, (0, 0, 255), 2)
+                
+        #         else:
+        #             cv2.drawContours(img, [approx], -1, (0, 127, 255), 2)
+        #             central_point_square = (x,y)
+        #             cv2.putText(img, "Square", central_point_square, cv2.FONT_HERSHEY_COMPLEX, 1, (0, 127, 255))
+        #             if (centro_x != None) and (centro_y != None):
+        #                 cv2.circle(img,(centro_x, centro_y), 5,(0, 127, 255),-1)
+
+
+            
+        #     # cv2.drawContours(img, [approx], -1, (0, 127, 255), 2)
+        #     # central_point_square = (x,y)
+        #     # cv2.putText(img, "Square", central_point_square, cv2.FONT_HERSHEY_COMPLEX, 1, (0, 127, 255))
+        #     # if (centro_x != None) and (centro_y != None):
+        #     #     cv2.circle(img,(centro_x, centro_y), 5,(0, 127, 255),-1)
+
+
+        #         '''Resposável por encontrar a forma de cruz'''
+        # elif (len(approx) == 12 and (((2*w*h) - w**2) >= sl7)):
+        #     cv2.drawContours(img, [approx], -1, (0, 255, 0), 2)
+        #     central_point_cross = (x,y)
+        #     cv2.putText(img, "Cross", central_point_cross, cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0))
+
+        #     if (centro_x != None) and (centro_y != None):
+        #         #cv2.circle(img,(centro_x, centro_y), 5,(0, 255, 0),-1)
+                
+        #         color = img[centro_y, centro_x]
+        #         #print(f"o ponto central da cruz tem como cor --> {color}")
+        #         #print(f"as coordenadas do meio da cruz são: ({centro_x}, {centro_y})")
+                
+        #         cv2.circle(img,(centro_x, centro_y), 5,(0, 255, 0),-1)
+
+
+        #     '''Resposável por encontrar a forma circular'''
+        # elif len(approx) > 12:
+        #     (x1, y1), raio = cv2.minEnclosingCircle(contour)
+        #     area = np.pi * (raio**2)
+
+        #     if area >= sl9:
+        #         cv2.drawContours(img, [approx], -1, (255, 0, 255), 2)
+        #         central_point_circle = (x,y)
+        #         cv2.putText(img, "Circle", central_point_circle, cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 255))
+
+        #         if (centro_x != None) and (centro_y != None):
+        #             cv2.circle(img,(centro_x, centro_y), 5,(255, 0, 255),-1)
 
 #==================================================================================================#
 
@@ -141,7 +207,7 @@ def figureBackgroundColor(img, hsv_img,sl6):
     
     elif sl6 == 1: #significa que o quadrado é de cor amarelo
         lower_limit = np.array([20,100,100])
-        upper_limit = np.array([100,255,255])
+        upper_limit = np.array([40,255,255]) #100 , 255, 255
         mask = cv2.inRange(hsv_img, lower_limit, upper_limit)
         result = cv2.bitwise_and(img, img, mask=mask)
         img = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
